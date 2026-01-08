@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>BookTok - Payment</title>
+	
+	<!-- Bootstrap CSS -->
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css" rel="stylesheet" />
+	<!-- Bootstrap Icons -->
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.13.1/font/bootstrap-icons.min.css" rel="stylesheet" />
+	<!-- Custom CSS -->
+	<link href="../css/style.css" rel="stylesheet" />
+</head>
+<body>
+	<!-- Navigation Bar -->
+	<nav class="navbar navbar-expand-lg navbar-light sticky-top">
+		<div class="container px-3">
+			<a class="navbar-brand" href="../../index.html">
+				<img src="../assets/images/BookTok Logo.png" alt="BookTok Logo" class="logo-img me-0" />
+				BookTok
+			</a>
+
+			<!-- Mobile Cart + Toggle (visible on smaller screens) -->
+			<div class="d-flex align-items-center ms-auto d-lg-none gap-2">
+				<!-- Cart Icon (mobile) -->
+				<a href="order.html" class="icon-link cart-link" title="Cart">
+					<i class="bi bi-cart-fill"></i>
+					<span class="cart-count-badge d-none">0</span>
+				</a>
+
+				<button
+					class="navbar-toggler"
+					type="button"
+					data-bs-toggle="collapse"
+					data-bs-target="#navbarContent"
+					aria-controls="navbarContent"
+					aria-expanded="false"
+					aria-label="Toggle navigation"
+				>
+					<span class="navbar-toggler-icon"></span>
+				</button>
+			</div>
+
+			<div class="collapse navbar-collapse" id="navbarContent">
+				<ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+					<li class="nav-item">
+						<a class="nav-link" href="../../index.html">Home</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="catalog.html">Catalog</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="order.html">Orders</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#faqs">FAQs</a>
+					</li>
+				</ul>
+
+				<div class="navbar-icons">
+					<a href="catalog.html" class="icon-link" title="Search">
+						<i class="bi bi-search"></i>
+					</a>
+					<a href="order.html" class="icon-link cart-link d-none d-lg-flex" title="Cart">
+						<i class="bi bi-cart-fill"></i>
+						<span id="cartCountBadge" class="cart-count-badge d-none">0</span>
+					</a>
+					<div class="auth-links">
+						<a href="login.html" class="btn-login">Login</a>
+						<a href="register.html" class="btn-signup">Sign Up</a>
+					</div>
+					<div class="navbar-profile d-none" id="navbarProfile">
+						<a href="profile.html" class="btn-profile">
+							<i class="bi bi-person"></i>
+							<span id="navbarProfileName"></span>
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</nav>
+
+	<main>
+		<section class="py-5 payment-section position-relative overflow-hidden">
+			<div class="hero-orbit-icon-ring">
+				<i class="bi bi-book-half"></i>
+				<i class="bi bi-stars"></i>
+				<i class="bi bi-fire"></i>
+				<i class="bi bi-cart-fill"></i>
+				<i class="bi bi-credit-card"></i>
+				<i class="bi bi-lightning-charge-fill"></i>
+				<i class="bi bi-star"></i>
+				<i class="bi bi-pen-fill"></i>
+			</div>
+			<div class="container">
+				<div class="row justify-content-center">
+					<div class="col-lg-8 col-xl-7">
+						<div id="paymentFormCard" class="card border-0 shadow mb-3 payment-card">
+							<div class="card-body p-4 p-md-4">
+								<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+									<div>
+										<h1 class="fw-bold mb-1 payment-title">Payment</h1>
+										<p class="mb-0">Complete your BookTok order securely.</p>
+									</div>
+									<a href="order.html" class="btn btn-secondary btn-sm">
+										<i class="bi bi-arrow-left me-1"></i>
+										Back to Order
+									</a>
+								</div>
+
+								<div class="payment-secure-note mb-4 small">
+									<i class="bi bi-lock-fill me-1"></i>
+									<span>Secure payment &mdash; your data is encrypted.</span>
+								</div>
+
+								<form id="paymentForm" class="row g-3" novalidate>
+									<div class="col-12">
+										<h6 class="payment-section-title"><strong>Card Details</strong></h6>
+									</div>
+									<div class="col-12">
+										<label for="cardName" class="form-label">Name on Card <span class="text-danger">*</span></label>
+										<input type="text" id="cardName" class="form-control" placeholder="Full name" required />
+									</div>
+									<div class="col-12">
+										<label for="cardNumber" class="form-label">Card Number <span class="text-danger">*</span></label>
+										<input type="text" id="cardNumber" class="form-control" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" required />
+									</div>
+									<div class="col-6 col-md-4">
+										<label for="cardExpiry" class="form-label">Expiry Date <span class="text-danger">*</span></label>
+										<input type="text" id="cardExpiry" class="form-control" placeholder="MM/YY" required />
+									</div>
+									<div class="col-6 col-md-4">
+										<label for="cardCvc" class="form-label">CVV <span class="text-danger">*</span></label>
+										<input type="password" id="cardCvc" class="form-control" inputmode="numeric" placeholder="123" required />
+									</div>
+
+									<div class="col-12 mt-2">
+										<h6 class="payment-section-title" style="padding-top: 2rem;"><strong>Billing Address</strong></h6>
+									</div>
+									<div class="col-12">
+										<label for="billingAddress" class="form-label">Address</label>
+										<input type="text" id="billingAddress" class="form-control" placeholder="Street Address" />
+									</div>
+									<div class="col-12 col-md-6">
+										<label for="billingCity" class="form-label">City <span class="text-danger">*</span></label>
+										<input type="text" id="billingCity" class="form-control" placeholder="City" required />
+									</div>
+									<div class="col-12 col-md-6">
+										<label for="billingCountry" class="form-label">Country / Region</label>
+										<input type="text" id="billingCountry" class="form-control" placeholder="Country or region" />
+									</div>
+									<div class="col-12 col-md-6">
+										<label for="billingZip" class="form-label">ZIP / Postal code</label>
+										<input type="text" id="billingZip" class="form-control" placeholder="12345" />
+									</div>
+
+									<div class="col-12 mt-4">
+										<div class="payment-total-row d-flex justify-content-between align-items-center">
+											<span class="payment-total-label">Total to Pay</span>
+											<span id="paymentTotalToPay" class="payment-total-amount">$0.00</span>
+										</div>
+									</div>
+
+									<div class="col-12 mt-4">
+										<button type="button" id="paymentConfirmBtn" class="btn btn-primary w-100 payment-confirm-btn">
+											<i class="bi bi-lock-fill me-1"></i>
+											Confirm Payment
+										</button>
+									</div>
+								</form>
+							</div>
+						</div>
+
+						<div id="paymentConfirmation" class="payment-confirmation text-center d-none">
+							<div class="payment-confirmation-icon mb-3">
+								<i class="bi bi-check-lg"></i>
+							</div>
+							<h2 class="payment-confirmation-title mb-2">Order Confirmed!</h2>
+							<p class="payment-confirmation-text mb-4">Thank you for your purchase. Your books are on the way!</p>
+							<a href="catalog.html" class="btn payment-confirmation-btn">Continue Shopping</a>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Payment FAQs -->
+			<section id="faqs" class="faqs-section py-5">
+				<div class="container">
+					<div class="row g-4 align-items-start">
+						<!-- Intro copy -->
+						<div class="col-lg-4">
+							<h2 class="faq-heading mt-2">Payment &amp; Security FAQs</h2>
+							<p class="faq-subtitle mb-3 mb-lg-4">
+								Learn how BookTok handles payments in this demo experience and
+								what to expect when you confirm your order.
+							</p>
+							<p class="faq-note small mb-0">
+								This page simulates a secure checkout flow. In a production
+								integration, payments are processed by a PCI-compliant provider
+								and never stored directly by BookTok.
+							</p>
+						</div>
+
+						<!-- Questions / answers -->
+						<div class="col-lg-8">
+							<div class="accordion faq-accordion" id="paymentFaqAccordion">
+								<!-- Real charges -->
+								<div class="accordion-item">
+									<h2 class="accordion-header" id="paymentFaqRealChargesHeading">
+										<button
+											class="accordion-button collapsed"
+											type="button"
+											data-bs-toggle="collapse"
+											data-bs-target="#paymentFaqRealCharges"
+											aria-expanded="false"
+											aria-controls="paymentFaqRealCharges"
+										>
+											Will my card be charged for real?
+										</button>
+									</h2>
+									<div
+										id="paymentFaqRealCharges"
+										class="accordion-collapse collapse"
+										aria-labelledby="paymentFaqRealChargesHeading"
+										data-bs-parent="#paymentFaqAccordion"
+									>
+										<div class="accordion-body">
+											No. This is a demonstration checkout experience. The
+											card details you enter are validated in the browser for
+											format only and are not sent to a live payment
+											processor.
+										</div>
+									</div>
+								</div>
+
+								<!-- Card security -->
+								<div class="accordion-item">
+									<h2 class="accordion-header" id="paymentFaqSecurityHeading">
+										<button
+											class="accordion-button collapsed"
+											type="button"
+											data-bs-toggle="collapse"
+											data-bs-target="#paymentFaqSecurity"
+											aria-expanded="false"
+											aria-controls="paymentFaqSecurity"
+										>
+											How is my card information protected?
+										</button>
+									</h2>
+									<div
+										id="paymentFaqSecurity"
+										class="accordion-collapse collapse"
+										aria-labelledby="paymentFaqSecurityHeading"
+										data-bs-parent="#paymentFaqAccordion"
+									>
+										<div class="accordion-body">
+											In a production setup, BookTok would use a trusted
+											payment gateway to tokenize and process card data. Your
+											card number would never be stored directly on BookTok
+											servers.
+										</div>
+									</div>
+								</div>
+
+								<!-- Failed payment -->
+								<div class="accordion-item">
+									<h2 class="accordion-header" id="paymentFaqFailedHeading">
+										<button
+											class="accordion-button collapsed"
+											type="button"
+											data-bs-toggle="collapse"
+											data-bs-target="#paymentFaqFailed"
+											aria-expanded="false"
+											aria-controls="paymentFaqFailed"
+										>
+											What happens if a payment fails?
+										</button>
+									</h2>
+									<div
+										id="paymentFaqFailed"
+										class="accordion-collapse collapse"
+										aria-labelledby="paymentFaqFailedHeading"
+										data-bs-parent="#paymentFaqAccordion"
+									>
+										<div class="accordion-body">
+											In a real integration, the payment provider would return
+											an error and your order would remain unpaid until you
+											update your details or try another method. This demo
+											simplifies that flow and always completes successfully
+											when the form is valid.
+										</div>
+									</div>
+								</div>
+
+								<!-- Refunds and cancellations -->
+								<div class="accordion-item">
+									<h2 class="accordion-header" id="paymentFaqRefundsHeading">
+										<button
+											class="accordion-button collapsed"
+											type="button"
+											data-bs-toggle="collapse"
+											data-bs-target="#paymentFaqRefunds"
+											aria-expanded="false"
+											aria-controls="paymentFaqRefunds"
+										>
+											Can I get a refund or cancel after paying?
+										</button>
+									</h2>
+									<div
+										id="paymentFaqRefunds"
+										class="accordion-collapse collapse"
+										aria-labelledby="paymentFaqRefundsHeading"
+										data-bs-parent="#paymentFaqAccordion"
+									>
+										<div class="accordion-body">
+											For this prototype, there is no real payment to
+											refund. In a live environment, refunds and
+											cancellations would follow the store policies configured
+											by the merchant.
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+		</main>
+
+		<!-- Footer (full, matching other pages) -->
+		<footer class="site-footer pt-5 pb-4">
+			<div class="container">
+				<div class="row gy-4 footer-top">
+					<!-- Brand + promo -->
+					<div class="col-lg-4">
+						<div class="footer-brand">
+							<img src="../assets/images/BookTok Logo.png" alt="BookTok Logo" class="logo-img me-2" />
+							<span class="footer-brand-name">BookTok</span>
+						</div>
+						<p class="footer-text">
+							Curated books, trusted reviews, and a smooth checkout experience
+							built for modern readers who discover their next favorite read online.
+						</p>
+
+						<div class="footer-promo">
+							<div class="footer-promo-title">Developed &amp; Maintained By</div>
+							<div class="footer-promo-name">Haseeb Anjum</div>
+							<div class="footer-promo-role">
+								Full Stack Developer &amp; Digital Experience Engineer
+							</div>
+
+							<a
+								href="https://www.linkedin.com/in/haseebanjumdev/"
+								target="_blank"
+								rel="noopener"
+								class="btn footer-linkedin-btn mt-2"
+							>
+								<i class="bi bi-linkedin me-1"></i>
+								Connect on LinkedIn
+							</a>
+
+							<div class="footer-social mt-3">
+								<a
+									href="https://github.com/HaseebAnjumDev"
+									target="_blank"
+									rel="noopener"
+									aria-label="GitHub"
+									class="footer-social-link"
+								>
+									<i class="bi bi-github"></i>
+								</a>
+								<a
+									href="https://www.linkedin.com/in/haseebanjumdev/"
+									target="_blank"
+									rel="noopener"
+									aria-label="LinkedIn"
+									class="footer-social-link"
+								>
+									<i class="bi bi-linkedin"></i>
+								</a>
+								<a
+									href="https://www.instagram.com/haseeb.x.khan/"
+									target="_blank"
+									rel="noopener"
+									aria-label="Instagram"
+									class="footer-social-link"
+								>
+									<i class="bi bi-instagram"></i>
+								</a>
+								<div class="dropdown footer-email-icon-dropdown">
+									<a
+										href="#"
+										class="footer-social-link dropdown-toggle"
+										id="footerEmailIconDropdown"
+										role="button"
+										data-bs-toggle="dropdown"
+										aria-expanded="false"
+										aria-label="Email options"
+									>
+										<i class="bi bi-envelope-fill"></i>
+									</a>
+									<ul
+										class="dropdown-menu footer-email-menu dropdown-menu-end"
+										aria-labelledby="footerEmailIconDropdown"
+									>
+										<li>
+											<a
+												class="dropdown-item"
+												href="https://mail.google.com/mail/?view=cm&to=haseebanjum2611@gmail.com"
+												target="_blank"
+												rel="noopener"
+											>
+												Compose in Gmail
+											</a>
+										</li>
+										<li>
+											<a
+												class="dropdown-item"
+												href="https://outlook.office.com/mail/deeplink/compose?to=haseebanjum2611@gmail.com"
+												target="_blank"
+												rel="noopener"
+											>
+												Open in Outlook Web
+											</a>
+										</li>
+										<li>
+											<a class="dropdown-item" href="mailto:haseebanjum2611@gmail.com">
+												Use Default Mail App
+											</a>
+										</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Quick Links -->
+					<div class="col-12 col-md-4 col-lg-3">
+						<h6 class="footer-heading">Quick Links</h6>
+						<ul class="list-unstyled footer-links-list">
+							<li><a href="../../index.html" class="footer-link">Home</a></li>
+							<li><a href="catalog.html" class="footer-link">Catalog</a></li>
+							<li><a href="order.html" class="footer-link">Orders</a></li>
+							<li><a href="login.html" class="footer-link">Login</a></li>
+							<li><a href="register.html" class="footer-link">Sign Up</a></li>
+							<li><a href="#faqs" class="footer-link">FAQs</a></li>
+						</ul>
+					</div>
+
+					<!-- Categories (single column) -->
+					<div class="col-12 col-md-4 col-lg-3">
+						<h6 class="footer-heading">Categories</h6>
+						<ul class="list-unstyled footer-links-list">
+							<li><a href="catalog.html?category=Fiction" class="footer-link">Fiction</a></li>
+							<li><a href="catalog.html?category=Non-Fiction" class="footer-link">Non-Fiction</a></li>
+							<li><a href="catalog.html?category=Mystery" class="footer-link">Mystery</a></li>
+							<li><a href="catalog.html?category=Romance" class="footer-link">Romance</a></li>
+							<li><a href="catalog.html?category=Science Fiction" class="footer-link">Science Fiction</a></li>
+							<li><a href="catalog.html?category=Fantasy" class="footer-link">Fantasy</a></li>
+							<li><a href="catalog.html?category=Psychology" class="footer-link">Psychology</a></li>
+							<li><a href="catalog.html?category=Tech" class="footer-link">Tech</a></li>
+						</ul>
+					</div>
+
+					<!-- Contact -->
+					<div class="col-12 col-md-4 col-lg-2">
+						<h6 class="footer-heading">Contact</h6>
+						<ul class="list-unstyled footer-links-list">
+							<li>
+								<a
+									href="https://github.com/HaseebAnjumDev"
+									target="_blank"
+									rel="noopener"
+									class="footer-link"
+								>
+									GitHub
+								</a>
+							</li>
+							<li>
+								<a
+									href="https://www.linkedin.com/in/haseebanjumdev/"
+									target="_blank"
+									rel="noopener"
+									class="footer-link"
+								>
+									LinkedIn
+								</a>
+							</li>
+							<li>
+								<a
+									href="https://www.instagram.com/haseeb.x.khan/"
+									target="_blank"
+									rel="noopener"
+									class="footer-link"
+								>
+									Instagram
+								</a>
+							</li>
+							<li class="footer-email-dropdown dropdown">
+								<a
+									href="#"
+									class="footer-link dropdown-toggle"
+									id="footerEmailDropdown"
+									role="button"
+									data-bs-toggle="dropdown"
+									aria-expanded="false"
+								>
+									Email
+								</a>
+								<ul class="dropdown-menu footer-email-menu" aria-labelledby="footerEmailDropdown">
+									<li>
+										<a
+											class="dropdown-item"
+											href="https://mail.google.com/mail/?view=cm&to=haseebanjum2611@gmail.com"
+											target="_blank"
+											rel="noopener"
+										>
+											Compose in Gmail
+										</a>
+									</li>
+									<li>
+										<a
+											class="dropdown-item"
+											href="https://outlook.office.com/mail/deeplink/compose?to=haseebanjum2611@gmail.com"
+											target="_blank"
+											rel="noopener"
+										>
+											Open in Outlook Web
+										</a>
+									</li>
+									<li>
+										<a class="dropdown-item" href="mailto:haseebanjum2611@gmail.com">
+											Use Default Mail App
+										</a>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</div>
+
+				<!-- Bottom bar -->
+				<div class="footer-bottom mt-4 pt-3">
+					<div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+						<p class="mb-0 small footer-bottom-text">
+							&copy; <span id="currentYear"></span> BookTok. All rights reserved.
+						</p>
+					</div>
+				</div>
+			</div>
+		</footer>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+	<script src="../js/main.js"></script>
+	<script src="../js/cart.js"></script>
+	<script src="../js/auth.js"></script>
+	<script src="../js/payment.js"></script>
+</body>
+</html>

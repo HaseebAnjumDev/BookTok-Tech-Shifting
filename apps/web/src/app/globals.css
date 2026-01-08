@@ -1,0 +1,7 @@
+/* Intentionally minimal.
+   The legacy BookTok UI is styled by Bootstrap + /frontend/css/style.css. */
+
+html,
+body {
+  height: 100%;
+}

@@ -65,9 +65,9 @@
 		}
 
 		return {
-			id: bookEl.getAttribute('id') || '',
-			title: text('title'),
-			author: (firstName + ' ' + lastName).trim(),
+		.then(function (res) {
+			if (!res.ok) throw new Error('Failed to load books.xml');
+			return res.text();
 			genre: text('genre'),
 			format: text('format'),
 			language: text('language'),
@@ -98,6 +98,60 @@
 		};
 	}
 
+	function readCartSafe() {
+		try {
+			var raw = window.localStorage.getItem('booktokCart');
+			if (!raw) return [];
+			var parsed = JSON.parse(raw);
+			return Array.isArray(parsed) ? parsed : [];
+		} catch (e) {
+			return [];
+		}
+	}
+
+	function saveCartSafe(cart) {
+		try {
+			window.localStorage.setItem('booktokCart', JSON.stringify(cart));
+		} catch (e) {
+			// ignore
+		}
+	}
+
+	function updateCartBadgeFromStorage() {
+		var badges = document.querySelectorAll('.cart-count-badge');
+		if (!badges || !badges.length) return;
+
+		var count = readCartSafe().length;
+		Array.prototype.forEach.call(badges, function (badge) {
+			if (!badge) return;
+			if (!count) {
+				badge.classList.add('d-none');
+				return;
+			}
+			badge.classList.remove('d-none');
+			badge.textContent = count > 9 ? '9+' : String(count);
+		});
+	}
+
+	function addToCartDatasetFallback(dataset) {
+		if (!dataset || !dataset.bookId) return;
+		var id = String(dataset.bookId);
+		var title = dataset.bookTitle || 'Untitled';
+		var author = dataset.bookAuthor || '';
+		var price = parseFloat(dataset.bookPrice || '0') || 0;
+		var image = dataset.bookImage || '';
+
+		var cart = readCartSafe();
+		var exists = cart.some(function (item) {
+			return String(item && item.id) === id;
+		});
+		if (!exists) {
+			cart.push({ id: id, title: title, author: author, price: price, image: image });
+			saveCartSafe(cart);
+		}
+		updateCartBadgeFromStorage();
+	}
+
 	function isUnavailable(tags) {
 		return (tags || []).some(function (t) {
 			return String(t || '').trim().toLowerCase() === 'unavailable';
@@ -114,10 +168,15 @@
 			if (!raw) return [];
 			var parsed = JSON.parse(raw);
 			return Array.isArray(parsed) ? parsed : [];
-		} catch (e) {
-			return [];
-		}
-	}
+				var coverImage = document.getElementById('bookCoverImage');
+				if (coverImage) {
+					try {
+						coverImage.src = new URL(book.coverImage, window.location.href).toString();
+					} catch (e) {
+						coverImage.src = book.coverImage;
+					}
+					coverImage.alt = (book.title ? book.title + ' cover' : 'Book cover');
+				}
 
 	function isBookAlreadyPurchased(bookId) {
 		if (bookId == null) return false;
@@ -138,7 +197,7 @@
 		return usable.length ? usable[0] : '';
 	}
 
-	document.addEventListener('DOMContentLoaded', function () {
+	function init() {
 		var bookId = getQueryParam('id');
 		if (!bookId) {
 			showError('Missing book id. Please return to the catalog and select a book.');
@@ -234,6 +293,8 @@
 							if (typeof window.BookTokCart.updateBadge === 'function') {
 								window.BookTokCart.updateBadge();
 							}
+						} else {
+							addToCartDatasetFallback(cartDataset);
 						}
 					});
 				}
@@ -246,6 +307,8 @@
 							if (typeof window.BookTokCart.updateBadge === 'function') {
 								window.BookTokCart.updateBadge();
 							}
+						} else {
+							addToCartDatasetFallback(cartDataset);
 						}
 						window.location.href = 'order.html';
 					});
@@ -254,5 +317,11 @@
 			.catch(function (err) {
 				showError((err && err.message) ? err.message : 'Could not load book details.');
 			});
-	});
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', init);
+	} else {
+		init();
+	}
 })();

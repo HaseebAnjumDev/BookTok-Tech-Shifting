@@ -104,6 +104,33 @@
 		});
 	}
 
+	function readOrdersSafe() {
+		try {
+			if (window.BookTokAuth && typeof window.BookTokAuth.readOrders === 'function') {
+				var fromApi = window.BookTokAuth.readOrders();
+				return Array.isArray(fromApi) ? fromApi : [];
+			}
+			var raw = window.localStorage.getItem('booktokOrders');
+			if (!raw) return [];
+			var parsed = JSON.parse(raw);
+			return Array.isArray(parsed) ? parsed : [];
+		} catch (e) {
+			return [];
+		}
+	}
+
+	function isBookAlreadyPurchased(bookId) {
+		if (bookId == null) return false;
+		var idStr = String(bookId);
+		var orders = readOrdersSafe();
+		return orders.some(function (order) {
+			var items = order && Array.isArray(order.items) ? order.items : [];
+			return items.some(function (item) {
+				return String(item && item.id) === idStr;
+			});
+		});
+	}
+
 	function pickDisplayTag(tags) {
 		var usable = (tags || []).filter(function (t) {
 			return t && t !== 'featured';
@@ -190,12 +217,18 @@
 				var cartDataset = buildCartDataset(book);
 
 				var unavailable = isUnavailable(book.tags);
-				setButtonDisabled(addBtn, unavailable);
-				setButtonDisabled(buyBtn, unavailable);
+				var purchased = isBookAlreadyPurchased(book.id);
+				var disabled = unavailable || purchased;
+				setButtonDisabled(addBtn, disabled);
+				setButtonDisabled(buyBtn, disabled);
+				if (purchased) {
+					if (addBtn) addBtn.title = 'Already purchased';
+					if (buyBtn) buyBtn.title = 'Already purchased';
+				}
 
 				if (addBtn) {
 					addBtn.addEventListener('click', function () {
-						if (unavailable) return;
+						if (disabled) return;
 						if (window.BookTokCart && typeof window.BookTokCart.addFromDataset === 'function') {
 							window.BookTokCart.addFromDataset(cartDataset);
 							if (typeof window.BookTokCart.updateBadge === 'function') {
@@ -207,7 +240,7 @@
 
 				if (buyBtn) {
 					buyBtn.addEventListener('click', function () {
-						if (unavailable) return;
+						if (disabled) return;
 						if (window.BookTokCart && typeof window.BookTokCart.addFromDataset === 'function') {
 							window.BookTokCart.addFromDataset(cartDataset);
 							if (typeof window.BookTokCart.updateBadge === 'function') {

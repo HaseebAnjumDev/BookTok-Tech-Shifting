@@ -2,8 +2,44 @@
 // Keeps markup compatible with existing catalog filtering/sorting/cart scripts.
 
 (function () {
+	var purchasedIds = null;
+
 	function safeText(el) {
 		return el ? String(el.textContent || '').trim() : '';
+	}
+
+	function readOrdersSafe() {
+		try {
+			if (window.BookTokAuth && typeof window.BookTokAuth.readOrders === 'function') {
+				var fromApi = window.BookTokAuth.readOrders();
+				return Array.isArray(fromApi) ? fromApi : [];
+			}
+			var raw = window.localStorage.getItem('booktokOrders');
+			if (!raw) return [];
+			var parsed = JSON.parse(raw);
+			return Array.isArray(parsed) ? parsed : [];
+		} catch (e) {
+			return [];
+		}
+	}
+
+	function getPurchasedIds() {
+		var set = new Set();
+		var orders = readOrdersSafe();
+		orders.forEach(function (order) {
+			var items = order && Array.isArray(order.items) ? order.items : [];
+			items.forEach(function (item) {
+				if (item && item.id != null) {
+					set.add(String(item.id));
+				}
+			});
+		});
+		return set;
+	}
+
+	function isPurchased(bookId) {
+		if (!purchasedIds) return false;
+		return purchasedIds.has(String(bookId));
 	}
 
 	function firstTagValue(parent, tag) {
@@ -107,6 +143,7 @@
 		var available = !unavailable;
 		var badge = pickBadge(book.tags);
 		var featured = isFeatured(book.tags);
+		var purchased = isPurchased(book.id);
 
 		var wrapper = document.createElement('div');
 		wrapper.className = 'col-12 col-sm-6 col-lg-4 catalog-book-item';
@@ -128,6 +165,10 @@
 			? '<span class="' + badge.cls + '">' + badge.label + '</span>'
 			: '';
 
+		var purchasedBadge = purchased
+			? '<span class="badge rounded-pill bg-success-subtle text-success">Purchased</span>'
+			: '';
+
 		var ratingHtml =
 			'<span class="catalog-book-rating">' +
 			'<i class="bi bi-star-fill text-warning me-1"></i>' +
@@ -137,7 +178,7 @@
 		var availabilityText = available ? 'Available' : 'Currently unavailable';
 
 		var actionsHtml = '';
-		if (available) {
+		if (available && !purchased) {
 			actionsHtml =
 				'<div class="catalog-book-actions">' +
 				'  <button type="button" class="btn btn-sm btn-primary rounded-circle catalog-book-cart-icon"' +
@@ -159,6 +200,14 @@
 				'    data-book-image="' + String(book.coverImage).replace(/"/g, '&quot;') + '"' +
 				'  >Buy</button>' +
 				'</div>';
+		} else if (available && purchased) {
+			actionsHtml =
+				'<div class="catalog-book-actions">' +
+				'  <button type="button" class="btn btn-sm btn-primary rounded-circle catalog-book-cart-icon" disabled aria-disabled="true" title="Already purchased">' +
+				'    <i class="bi bi-cart-plus"></i>' +
+				'  </button>' +
+				'  <button type="button" class="btn btn-sm btn-outline-primary catalog-book-buy-btn" disabled aria-disabled="true" title="Already purchased">In Library</button>' +
+				'</div>';
 		} else {
 			actionsHtml =
 				'<button type="button" class="btn btn-sm btn-outline-secondary" disabled>' +
@@ -175,6 +224,7 @@
 			'    <div class="d-flex justify-content-between align-items-center mb-2 small">' +
 			categoryBadge +
 			(secondBadge ? secondBadge : '') +
+			(purchasedBadge ? purchasedBadge : '') +
 			'    </div>' +
 			'    <h5 class="card-title mb-1">' + book.title + '</h5>' +
 			'    <p class="card-subtitle text-muted small mb-2">' + book.author + '</p>' +
@@ -196,6 +246,8 @@
 	document.addEventListener('DOMContentLoaded', function () {
 		var grid = document.getElementById('catalogBooksGrid');
 		if (!grid) return;
+
+		purchasedIds = getPurchasedIds();
 
 		// Clear any hard-coded items (we want XML as the source of truth).
 		grid.innerHTML = '';

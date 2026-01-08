@@ -465,6 +465,38 @@
 		renderOrdersSection();
 	}
 
+	function normalizeStoredAssetPath(path) {
+		if (!path) return '';
+		if (path.indexOf('../assets/') === 0) return path;
+		var idx = path.indexOf('assets/');
+		if (idx >= 0) {
+			return '../' + path.slice(idx);
+		}
+		return path;
+	}
+
+	function triggerSingleBookDownload(item) {
+		if (!item) return;
+		var id = String(item.id || '').trim();
+		if (!id) return;
+		var href = '../assets/books/book-' + id + '.pdf';
+		var title = (item.title || 'Book-' + id).trim();
+		var safeTitle = title
+			.replace(/[\\/:*?"<>|]+/g, '')
+			.replace(/\s+/g, ' ')
+			.trim();
+		if (!safeTitle) safeTitle = 'Book-' + id;
+		var downloadName = safeTitle + '.pdf';
+
+		var link = document.createElement('a');
+		link.href = href;
+		link.download = downloadName;
+		link.style.display = 'none';
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+	}
+
 	function initProfileTabs() {
 		var tabButtons = document.querySelectorAll('[data-profile-tab]');
 		if (!tabButtons.length) return;
@@ -521,64 +553,47 @@
 		emptyState.classList.add('d-none');
 		listContainer.innerHTML = '';
 
-		orders
+		// Build a Library view from every purchase (each order item is shown).
+		var sortedOrders = orders
 			.slice()
 			.sort(function (a, b) {
 				return (b.placedAt || 0) > (a.placedAt || 0) ? 1 : -1;
-			})
-			.forEach(function (order) {
+			});
+
+		sortedOrders.forEach(function (order) {
+			var orderId = order && order.id != null ? String(order.id) : '';
+			var createdAt = order && order.placedAt ? new Date(order.placedAt) : null;
+			var dateLabel = createdAt && !isNaN(createdAt.getTime())
+				? createdAt.toLocaleString(undefined, {
+					month: 'short',
+					day: 'numeric',
+					year: 'numeric',
+					hour: '2-digit',
+					minute: '2-digit',
+				})
+				: 'Purchased recently';
+
+			var items = order && Array.isArray(order.items) ? order.items : [];
+			items.forEach(function (item) {
+				if (!item) return;
+				var title = item.title || 'Purchased book';
+				var author = item.author || '';
+				var image = normalizeStoredAssetPath(item.image || '');
+				var bookId = item.id != null ? String(item.id) : '';
+				if (!bookId) return;
+
 				var card = document.createElement('div');
 				card.className = 'card border-1 shadow-sm mb-3 profile-order-card';
-
-				var createdAt = order.placedAt ? new Date(order.placedAt) : null;
-				var dateLabel = createdAt && !isNaN(createdAt.getTime())
-					? createdAt.toLocaleString(undefined, {
-						month: 'short',
-						day: 'numeric',
-						year: 'numeric',
-						hour: '2-digit',
-						minute: '2-digit',
-					})
-					: 'Recent order';
-
-				var items = Array.isArray(order.items) ? order.items : [];
-				var itemCount = items.reduce(function (sum, item) {
-					return sum + (item.quantity || 0);
-				}, 0);
-
-				var firstTitle = items[0] && items[0].title ? items[0].title : '';
-				var rawImage = items[0] && items[0].image ? items[0].image : '';
-				var firstImage = rawImage;
-				if (firstImage && firstImage.indexOf('../assets/') !== 0) {
-					var imgIdx = firstImage.indexOf('assets/');
-					if (imgIdx >= 0) {
-						firstImage = '../' + firstImage.slice(imgIdx);
-					}
+				card.setAttribute('data-book-id', bookId);
+				if (orderId) {
+					card.setAttribute('data-order-id', orderId);
 				}
-				var firstAuthor = items[0] && items[0].author ? items[0].author : '';
-				var firstQty = items[0] && items[0].quantity ? items[0].quantity : 0;
-				var firstPriceRaw = items[0] && items[0].price != null ? Number(items[0].price) : NaN;
-				var hasFirstPrice = !isNaN(firstPriceRaw);
-				var firstPriceLabel = hasFirstPrice ? '$' + firstPriceRaw.toFixed(2) : '';
-				var firstLineTotalLabel = hasFirstPrice ? '$' + (firstPriceRaw * (firstQty || 1)).toFixed(2) : '';
-				var moreCount = items.length > 1 ? items.length - 1 : 0;
-				var summaryTitle = '';
-				if (firstTitle && moreCount > 0) {
-					summaryTitle = firstTitle + ' +' + moreCount + ' more';
-				} else if (firstTitle) {
-					summaryTitle = firstTitle;
-				} else {
-					summaryTitle = 'Book order';
-				}
-
-				var totalAmount = typeof order.total === 'number' ? order.total : 0;
-				var totalLabel = '$' + totalAmount.toFixed(2);
 
 				var imageHtml = '';
-				if (firstImage) {
+				if (image) {
 					imageHtml =
 						'<div class="profile-order-cover me-3 flex-shrink-0">' +
-						'<img src="' + firstImage + '" alt="' + (firstTitle || 'Book cover') + '" class="profile-order-cover-img" />' +
+						'<img src="' + image + '" alt="' + (title || 'Book cover') + '" class="profile-order-cover-img" />' +
 						'</div>';
 				}
 
@@ -588,29 +603,78 @@
 					     imageHtml +
 					'    <div>' +
 					'      <div class="d-flex align-items-center gap-2 mb-1 small text-muted">' +
-					'        <span class="badge bg-light text-muted border">Order</span>' +
+					'        <span class="badge bg-light text-muted border">Purchased</span>' +
 					'        <span>' + dateLabel + '</span>' +
 					'      </div>' +
-					'      <h6 class="mb-1">' + summaryTitle + '</h6>' +
-					( firstAuthor
-						? '      <p class="text-muted small mb-1">by ' + firstAuthor + '</p>'
-						: ''
-					) +
-					( hasFirstPrice
-						? '      <p class="text-muted small mb-1">Price: ' + firstPriceLabel + ' &middot; Qty: ' + (firstQty || 1) + ' &middot; Line total: ' + firstLineTotalLabel + '</p>'
-						: ''
-					) +
-					'      <p class="text-muted small mb-0">' + itemCount + ' item' + (itemCount === 1 ? '' : 's') + ' in this order</p>' +
+					'      <h6 class="mb-1">' + title + '</h6>' +
+						( author
+							? '      <p class="text-muted small mb-1">by ' + author + '</p>'
+							: ''
+						) +
+					'      <p class="text-muted small mb-0">Available in your library for re-download.</p>' +
 					'    </div>' +
 					'  </div>' +
 					'  <div class="text-md-end ms-md-auto mt-2 mt-md-0">' +
-					'    <div class="fw-semibold mb-1">' + totalLabel + '</div>' +
-					'    <p class="text-muted small mb-0">Completed</p>' +
+					'    <button type="button" class="btn btn-primary btn-sm profile-download-btn" data-book-id="' + bookId + '"' +
+						(orderId ? ' data-order-id="' + orderId + '"' : '') +
+					'>\n' +
+					'      <i class="bi bi-download me-1"></i>Download' +
+					'    </button>' +
 					'  </div>' +
 					'</div>';
 
 				listContainer.appendChild(card);
 			});
+		});
+
+		if (!renderOrdersSection.__downloadBound) {
+			renderOrdersSection.__downloadBound = true;
+			listContainer.addEventListener('click', function (event) {
+				var target = event && event.target ? event.target : null;
+				if (!target || !target.closest) return;
+				var btn = target.closest('.profile-download-btn');
+				if (!btn) return;
+				event.preventDefault();
+				var bookId = btn.getAttribute('data-book-id');
+				if (!bookId) return;
+				var orderId = btn.getAttribute('data-order-id');
+
+				var ordersNow = readOrders();
+				var foundItem = null;
+				if (orderId) {
+					var matchingOrder = ordersNow.find(function (o) {
+						return String(o && o.id) === String(orderId);
+					});
+					if (matchingOrder && Array.isArray(matchingOrder.items)) {
+						foundItem = matchingOrder.items.find(function (it) {
+							return String(it && it.id) === String(bookId);
+						}) || null;
+					}
+				}
+
+				if (!foundItem) {
+					ordersNow
+						.slice()
+						.sort(function (a, b) {
+							return (b.placedAt || 0) > (a.placedAt || 0) ? 1 : -1;
+						})
+						.some(function (order) {
+							var items = order && Array.isArray(order.items) ? order.items : [];
+							return items.some(function (item) {
+								if (String(item && item.id) === String(bookId)) {
+									foundItem = item;
+									return true;
+								}
+								return false;
+							});
+						});
+				}
+
+				if (foundItem) {
+					triggerSingleBookDownload(foundItem);
+				}
+			});
+		}
 	}
 
 	document.addEventListener('DOMContentLoaded', function () {

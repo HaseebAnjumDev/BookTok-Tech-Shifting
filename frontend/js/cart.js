@@ -54,9 +54,7 @@
   }
 
   function getCartCount(cart) {
-    return cart.reduce(function (total, item) {
-      return total + (item.quantity || 0);
-    }, 0);
+    return Array.isArray(cart) ? cart.length : 0;
   }
 
   function formatPrice(value) {
@@ -132,6 +130,33 @@
     }, 2200);
   }
 
+  function readOrdersSafe() {
+    try {
+      if (window.BookTokAuth && typeof window.BookTokAuth.readOrders === 'function') {
+        var fromApi = window.BookTokAuth.readOrders();
+        return Array.isArray(fromApi) ? fromApi : [];
+      }
+      var raw = window.localStorage.getItem('booktokOrders');
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function isBookAlreadyPurchased(bookId) {
+    if (bookId == null) return false;
+    var idStr = String(bookId);
+    var orders = readOrdersSafe();
+    return orders.some(function (order) {
+      var items = order && Array.isArray(order.items) ? order.items : [];
+      return items.some(function (item) {
+        return String(item && item.id) === idStr;
+      });
+    });
+  }
+
   function addToCartFromDataset(dataset) {
     if (!dataset) return;
     const id = dataset.bookId;
@@ -142,19 +167,21 @@
     const price = parseFloat(dataset.bookPrice || '0') || 0;
     const image = normalizeImagePath(dataset.bookImage || '');
 
+    if (isBookAlreadyPurchased(id)) {
+      showCartToast('"' + title + '" is already in your library');
+      return;
+    }
+
     var cart = readCart();
     var index = findItemIndex(cart, id);
 
-    if (index >= 0) {
-      cart[index].quantity = (cart[index].quantity || 0) + 1;
-    } else {
+    if (index === -1) {
       cart.push({
         id: id,
         title: title,
         author: author,
         price: price,
         image: image,
-        quantity: 1,
       });
     }
 
@@ -226,9 +253,8 @@
       container.innerHTML = '';
 
       cart.forEach(function (item) {
-        var quantity = item.quantity || 0;
-        var lineTotal = item.price * quantity;
-        subtotal += lineTotal;
+        var priceNumber = isNaN(item.price) ? 0 : Number(item.price);
+        subtotal += priceNumber;
 
         var card = document.createElement('div');
         card.className = 'order-item-card mb-3';
@@ -263,19 +289,6 @@
           '</div>' +
           '    </div>' +
           '    <div class="d-flex align-items-center gap-3 mt-2">' +
-          '      <div class="order-qty-control btn-group" role="group" aria-label="Quantity for ' +
-          item.title.replace(/"/g, '&quot;') +
-          '">' +
-          '        <button type="button" class="btn btn-outline-secondary btn-sm order-qty-btn" data-action="decrease" aria-label="Decrease quantity">' +
-          '          <i class="bi bi-dash"></i>' +
-          '        </button>' +
-          '        <span class="order-qty-value">' +
-          quantity +
-          '</span>' +
-          '        <button type="button" class="btn btn-outline-secondary btn-sm order-qty-btn" data-action="increase" aria-label="Increase quantity">' +
-          '          <i class="bi bi-plus"></i>' +
-          '        </button>' +
-          '      </div>' +
           '      <button type="button" class="btn btn-link text-danger p-0 order-remove-btn" aria-label="Remove ' +
           item.title.replace(/"/g, '&quot;') +
           ' from order">' +
@@ -290,34 +303,6 @@
 
       subtotalEl.textContent = formatPrice(subtotal);
       totalEl.textContent = formatPrice(subtotal); // no tax, total equals subtotal
-
-      // attach listeners for quantity buttons
-      container.querySelectorAll('.order-qty-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var parentCard = btn.closest('.order-item-card');
-          if (!parentCard) return;
-          var id = parentCard.dataset.bookId;
-          var action = btn.getAttribute('data-action');
-
-          var cart = readCart();
-          var index = findItemIndex(cart, id);
-          if (index === -1) return;
-
-          var currentQty = cart[index].quantity || 0;
-          if (action === 'increase') {
-            cart[index].quantity = currentQty + 1;
-          } else if (action === 'decrease') {
-            if (currentQty <= 1) {
-              cart.splice(index, 1);
-            } else {
-              cart[index].quantity = currentQty - 1;
-            }
-          }
-
-          commitCart(cart);
-          rerender();
-        });
-      });
 
       // attach listeners for remove buttons
       container.querySelectorAll('.order-remove-btn').forEach(function (btn) {

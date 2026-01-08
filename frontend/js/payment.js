@@ -7,7 +7,7 @@
 		}
 		var cart = window.BookTokCart.readCart();
 		return cart.reduce(function (sum, item) {
-			return sum + (item.price || 0) * (item.quantity || 0);
+			return sum + (item.price || 0);
 		}, 0);
 	}
 
@@ -150,15 +150,48 @@
 				return;
 			}
 
+			// Enforce one-time purchase: do not allow buying a book that is already in the user's library.
+			var existingOrders = [];
+			if (window.BookTokAuth && typeof window.BookTokAuth.readOrders === 'function') {
+				existingOrders = window.BookTokAuth.readOrders() || [];
+			} else {
+				try {
+					var rawOrders = window.localStorage.getItem('booktokOrders');
+					if (rawOrders) {
+						var parsedOrders = JSON.parse(rawOrders);
+						if (Array.isArray(parsedOrders)) existingOrders = parsedOrders;
+					}
+				} catch (e) {
+					existingOrders = [];
+				}
+			}
+
+			var purchasedIds = new Set();
+			existingOrders.forEach(function (order) {
+				var items = order && Array.isArray(order.items) ? order.items : [];
+				items.forEach(function (item) {
+					if (item && item.id != null) purchasedIds.add(String(item.id));
+				});
+			});
+
+			var currentCart = window.BookTokCart && typeof window.BookTokCart.readCart === 'function'
+				? window.BookTokCart.readCart()
+				: [];
+			var hasRepurchase = Array.isArray(currentCart) && currentCart.some(function (item) {
+				return item && item.id != null && purchasedIds.has(String(item.id));
+			});
+			if (hasRepurchase) {
+				window.alert('One or more books in your cart have already been purchased and are available in your Library. Please remove them before paying.');
+				return;
+			}
+
 			confirmBtn.disabled = true;
 			confirmBtn.classList.add('disabled');
 			var originalHtml = confirmBtn.innerHTML;
 			confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
 
 			// Trigger downloads immediately within the same user gesture
-			var cart = window.BookTokCart && typeof window.BookTokCart.readCart === 'function'
-				? window.BookTokCart.readCart()
-				: [];
+			var cart = currentCart;
 
 			// Save a simple order record so it can be shown on the profile page
 			if (cart && cart.length) {
@@ -170,26 +203,11 @@
 						title: item.title,
 						author: item.author,
 						price: item.price,
-						quantity: item.quantity,
 						image: item.image,
 					});
 				});
 
-				var existingOrders = [];
-				if (window.BookTokAuth && typeof window.BookTokAuth.readOrders === 'function') {
-					existingOrders = window.BookTokAuth.readOrders() || [];
-				} else {
-					try {
-						var raw = window.localStorage.getItem('booktokOrders');
-						if (raw) {
-							var parsed = JSON.parse(raw);
-							if (Array.isArray(parsed)) existingOrders = parsed;
-						}
-					} catch (e) {
-						existingOrders = [];
-					}
-				}
-
+				// existingOrders already read above
 				var orderRecord = {
 					id: Date.now(),
 					placedAt: new Date().toISOString(),
